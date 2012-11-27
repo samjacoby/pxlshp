@@ -15,12 +15,15 @@ $P = {
 		$P.canvas = $P.element.getContext('2d');
 		$C = $P.canvas
 		if ($(window).width() < $(window).height()) $P.width = args['displaySize'] || $(window).width()-30 //256
-		else $P.width = args['displaySize'] || ($(window).width()-30)/3
-		$P.height = $P.width
+		else $P.width = args['displaySize'] || ($(window).width()-100)
 		$P.element.width = $P.width
-		$P.element.height = $P.width
-		$P.iconSize = 16
-		$P.pixelSize = $P.width/$P.iconSize
+		$P.iconSizeX = 60 // 60 boxes across
+		$P.iconSizeY = 24 // 24 boxes high
+		$P.pixelSize = $P.width/$P.iconSizeX
+
+		$P.height = $P.pixelSize * $P.iconSizeY 
+		$P.element.height = $P.height
+
 		$P.intPixelSize = Math.floor($P.width/$P.iconSize)
 		$P.grid = args['grid'] || true
 		$('body').mouseup($P.on_mouseup)
@@ -71,8 +74,9 @@ $P = {
 	 * Draws a pixel of black or white at the pointer location
 	**/
 	drawPixel: function() {
-		x = parseInt($P.pointer_x/$P.width*$P.iconSize)
-		y = parseInt($P.pointer_y/$P.height*$P.iconSize)
+		x = parseInt($P.pointer_x/$P.width*$P.iconSizeX)
+		y = parseInt($P.pointer_y/$P.height*$P.iconSizeY)
+        console.log("1 x: " + x + ", y: " + y)
 		if ($P.onCanvas) {
 			$C.fillRect(x*$P.pixelSize,y*$P.pixelSize,$P.intPixelSize,$P.intPixelSize)
 		}
@@ -117,11 +121,10 @@ $P = {
 // x and y are still zero-indexed...
 		if (!fatalerror) {x++; y++;}
 
-
-
 			$P.pointer_x = x
 			$P.pointer_y = y
 			$P.onCanvas = (e.pageX >= offsetX && e.pageX < offsetX+$P.width && e.pageY >= offsetY && e.pageY < offsetY+$P.height)
+            console.log("onCanvas: " + $P.onCanvas)
 		}
 	},
 	isBlack: function(x,y) {
@@ -137,13 +140,15 @@ $P = {
 		color = color || "#cccccc"
 		$C.strokeStyle = color
 		$C.lineWidth = 1
-		for (i=1;i<$P.iconSize;i++) {
+		for (i=1;i<$P.iconSizeX;i++) {
+            (i % 10 == 0) ? $C.strokeStyle = "#ff0000" : $C.strokeStyle = color 
 			$C.beginPath()
 			$C.moveTo(Math.floor(i*$P.pixelSize),0)
 			$C.lineTo(Math.floor(i*$P.pixelSize),$P.height)
 			$C.stroke()
 		}
-		for (i=1;i<$P.iconSize;i++) {
+		for (i=1;i<$P.iconSizeY;i++) {
+            (i % 12 == 0) ? $C.strokeStyle = "#ff0000" : $C.strokeStyle = color 
 			$C.beginPath()
 			$C.moveTo(0,Math.floor(i*$P.pixelSize))
 			$C.lineTo($P.width,Math.floor(i*$P.pixelSize))
@@ -159,14 +164,14 @@ $P = {
 		$P.displayImage.onload = function() {
 			$('body').append("<canvas style='' id='displayCanvas'></canvas>")
 			var element = $('#displayCanvas')[0]
-			element.width = $P.iconSize
-			element.height = $P.iconSize
+			element.width = $P.iconSizeX
+			element.height = $P.iconSizeY
 			var displayCanvasContext = element.getContext('2d')
-			displayCanvasContext.drawImage($P.displayImage,0,0,$P.iconSize,$P.iconSize)
-			var img = displayCanvasContext.getImageData(0,0,$P.iconSize,$P.iconSize).data
+			displayCanvasContext.drawImage($P.displayImage,0,0,$P.iconSizeX,$P.iconSizeY)
+			var img = displayCanvasContext.getImageData(0,0,$P.iconSizeX,$P.iconSizeY).data
 			for (i=0;i<img.length/4;i+=1) {
-				x = i-(Math.floor(i/$P.iconSize)*$P.iconSize)
-				y = Math.floor(i/$P.iconSize)
+				x = i-(Math.floor(i/$P.iconSizeX)*$P.iconSizeX)
+				y = Math.floor(i/$P.iconSizeY)
 				j = i*4
 				$C.fillStyle = "rgba("+img[j]+","+img[j+1]+","+img[j+2]+","+img[j+3]+")"
 				$C.fillRect(x*$P.pixelSize,y*$P.pixelSize,$P.pixelSize,$P.pixelSize)
@@ -194,8 +199,8 @@ $P = {
 			//greyscale
 		} else {
 			binary = ""
-			for (y=0;y<$P.iconSize;y++) {
-				for (x=0;x<$P.iconSize;x++) {
+			for (y=0;y<$P.iconSizeY;y++) {
+				for (x=0;x<$P.iconSizeX;x++) {
 					data = $C.getImageData(parseInt(x*$P.pixelSize+$P.pixelSize/2),parseInt(y*$P.pixelSize+$P.pixelSize/2),1,1).data
 					if (data[0] > 128 || data[3] == 0) binary += "0"
 					else binary += "1"
@@ -214,8 +219,8 @@ $P = {
 		} else {
 			binary = parseInt(string).toString(2)
 			for (p = 0;p < binary.length;p++) {
-				y = Math.floor(p/$P.iconSize)
-				x = p-(y*$P.iconSize)
+				y = Math.floor(p/$P.iconSizeY)
+				x = p-(y*$P.iconSizeX)
 				if (binary[p] == 1) $C.fillStyle = "black"
 				else $C.fillStyle = "white"
 				$C.fillRect(x*$P.pixelSize,y*$P.pixelSize,$P.intPixelSize,$P.intPixelSize)
@@ -258,11 +263,11 @@ $P = {
 	getScaledIcon: function(callback) {
 		$('body').append("<canvas style='' id='excerptCanvas'></canvas>")
 		var element = $('#excerptCanvas')[0]
-		element.width = $P.iconSize
-		element.height = $P.iconSize
+		element.width = $P.iconSizeX
+		element.height = $P.iconSizeY
 		var excerptCanvasContext = element.getContext('2d')
-		for (var x=0;x<$P.iconSize;x++) {
-			for (var y=0;y<$P.iconSize;y++) {
+		for (var x=0;x<$P.iconSizeX;x++) {
+			for (var y=0;y<$P.iconSizeY;y++) {
 			var sourcedata = $C.getImageData(x*$P.pixelSize+parseInt($P.pixelSize/2),y*$P.pixelSize+parseInt($P.pixelSize/2),1,1)
 			excerptCanvasContext.putImageData(sourcedata,x,y)
 			}
