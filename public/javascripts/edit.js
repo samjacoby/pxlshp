@@ -24,7 +24,7 @@ $P = {
 		$P.height = $P.pixelSize * $P.iconSizeY 
 		$P.element.height = $P.height
 
-		$P.intPixelSize = Math.floor($P.width/$P.iconSize)
+		$P.intPixelSize = Math.floor($P.width/$P.iconSizeX)
 		$P.grid = args['grid'] || true
 		$('body').mouseup($P.on_mouseup)
 		$('body').mousedown($P.on_mousedown)
@@ -76,7 +76,8 @@ $P = {
 	drawPixel: function() {
 		x = parseInt($P.pointer_x/$P.width*$P.iconSizeX)
 		y = parseInt($P.pointer_y/$P.height*$P.iconSizeY)
-        console.log("1 x: " + x + ", y: " + y)
+        console.log("x: " + x + ", y: " + y)
+        console.log("onCanvas in drawPixel" + $P.onCanvas)
 		if ($P.onCanvas) {
 			$C.fillRect(x*$P.pixelSize,y*$P.pixelSize,$P.intPixelSize,$P.intPixelSize)
 		}
@@ -171,7 +172,7 @@ $P = {
 			var img = displayCanvasContext.getImageData(0,0,$P.iconSizeX,$P.iconSizeY).data
 			for (i=0;i<img.length/4;i+=1) {
 				x = i-(Math.floor(i/$P.iconSizeX)*$P.iconSizeX)
-				y = Math.floor(i/$P.iconSizeY)
+				y = Math.floor(i/$P.iconSizeX)
 				j = i*4
 				$C.fillStyle = "rgba("+img[j]+","+img[j+1]+","+img[j+2]+","+img[j+3]+")"
 				$C.fillRect(x*$P.pixelSize,y*$P.pixelSize,$P.pixelSize,$P.pixelSize)
@@ -206,7 +207,7 @@ $P = {
 					else binary += "1"
 				}
 			}
-			//console.log(binary)
+			//console.log(binary + "length: " + binary.length)
 			//console.log(parseInt(binary,2))
 			return Base64.encode(parseInt(binary,2))
 		}
